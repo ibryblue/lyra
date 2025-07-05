@@ -1,0 +1,1 @@
+export { default as VRMValidator } from './VRMValidator'; 

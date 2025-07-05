@@ -1,0 +1,368 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+  
+  .text-shadow-cosmic {
+    text-shadow: 0 0 10px rgba(255, 65, 108, 0.3), 0 0 20px rgba(91, 60, 196, 0.2);
+  }
+  
+  .glow-cosmic {
+    box-shadow: 
+      0 0 20px rgba(0, 210, 255, 0.2),
+      0 0 40px rgba(255, 110, 199, 0.1),
+      inset 0 0 20px rgba(91, 60, 196, 0.1);
+  }
+  
+  .border-glow {
+    border: 1px solid transparent;
+    background: linear-gradient(135deg, #2f0743, #090a0f) padding-box,
+                linear-gradient(135deg, #ff6ec7, #00d2ff, #5b3cc4) border-box;
+  }
+  
+  .cosmic-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .cosmic-scrollbar::-webkit-scrollbar-track {
+    background: #090a0f;
+  }
+  
+  .cosmic-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #ff416c, #00d2ff);
+    border-radius: 4px;
+  }
+  
+  .cosmic-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #ff6ec7, #5b3cc4);
+  }
+}
+
+/* Custom CSS Variables */
+:root {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+  --radius: 0.5rem;
+  
+  /* Cosmic Theme Variables */
+  --cosmic-bg-primary: #090a0f;
+  --cosmic-bg-secondary: #010012;
+  --cosmic-bg-tertiary: #2f0743;
+  --cosmic-accent-cyan: #00d2ff;
+  --cosmic-accent-purple: #5b3cc4;
+  --cosmic-accent-pink: #ff416c;
+  --cosmic-accent-pink-light: #ff6ec7;
+  --cosmic-text-primary: #FFFFFF;
+  --cosmic-text-secondary: #e0e0e0;
+  --cosmic-text-muted: #CCCCCC;
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
+
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
+}
+
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--cosmic-bg-primary);
+  color: var(--cosmic-text-primary);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cosmic-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--cosmic-accent-pink), var(--cosmic-accent-cyan));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--cosmic-accent-pink-light), var(--cosmic-accent-purple));
+}
+
+/* Selection */
+::selection {
+  background: var(--cosmic-accent-cyan);
+  color: var(--cosmic-bg-primary);
+}
+
+/* Focus styles */
+button:focus,
+input:focus,
+select:focus {
+  outline: 2px solid var(--cosmic-accent-cyan);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--cosmic-accent-cyan);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--cosmic-accent-cyan), 0 0 30px var(--cosmic-accent-cyan);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Utility Classes */
+.cosmic-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.cosmic-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.cosmic-twinkle {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+  background: rgba(9, 10, 15, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Button hover effects */
+.btn-cosmic {
+  background: linear-gradient(45deg, var(--cosmic-accent-cyan), var(--cosmic-accent-purple));
+  transition: all 0.3s ease;
+}
+
+.btn-cosmic:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(79, 195, 247, 0.3);
+}
+
+/* Loading spinner */
+.cosmic-spinner {
+  border: 3px solid rgba(79, 195, 247, 0.3);
+  border-top: 3px solid var(--cosmic-accent-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Text gradient effects */
+.text-gradient-cosmic {
+  background: linear-gradient(45deg, var(--cosmic-accent-cyan), var(--cosmic-accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Custom range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+  background: var(--cosmic-bg-secondary);
+  height: 6px;
+  border-radius: 3px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: var(--cosmic-accent-cyan);
+  cursor: pointer;
+  border: 2px solid var(--cosmic-bg-primary);
+  box-shadow: 0 0 10px rgba(79, 195, 247, 0.5);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--cosmic-accent-purple);
+  box-shadow: 0 0 15px rgba(225, 190, 231, 0.7);
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-track {
+  background: var(--cosmic-bg-secondary);
+  height: 6px;
+  border-radius: 3px;
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: var(--cosmic-accent-cyan);
+  cursor: pointer;
+  border: 2px solid var(--cosmic-bg-primary);
+  box-shadow: 0 0 10px rgba(79, 195, 247, 0.5);
+}
+
+/* Responsive text sizes */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 12px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+img {
+  object-position: top;
+}
+
+/* Add custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 9999px;
+}
+
+.scrollbar-track-gray-800::-webkit-scrollbar-track {
+  background-color: #1f2937;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #1f2937;
+  border-radius: 9999px;
+}
+
+.fixed {
+  position: fixed;
+}
