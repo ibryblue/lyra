@@ -35,9 +35,15 @@ A stunning React-based web application featuring an interactive 3D virtual compa
 
 ### Character Expressions & Animations
 - **Facial Expressions**: Happy, surprised, sad, and neutral expressions
+- **Eye Movement**: 
+  - Research-based natural eye movement system
+  - Accurate movement physics with proper acceleration/deceleration
+  - Separate horizontal and vertical tracking
+  - Natural movement limits and smooth transitions
 - **Body Animations**: Wave gestures, idle movements, and breathing
 - **Emotion System**: Character reacts with appropriate expressions
 - **Animation Blending**: Smooth transitions between different states
+- **Mouse Tracking**: Natural eye and head following with proper physics
 
 ### State Management
 - **Zustand Store**: Efficient state management for character, voice, and UI
@@ -216,3 +222,23 @@ For questions, issues, or feature requests, please refer to the project document
 ---
 
 **Lyra** - Where technology meets personality in a cosmic digital experience. ✨
+
+## 📢 Recent Updates
+
+### January 2025
+- **Enhanced Eye Movement System**: Implemented research-based natural eye movement
+  - Accurate eye movement physics based on academic research
+  - Separate horizontal and vertical movement calculations
+  - Natural acceleration and deceleration
+  - Proper eye movement ranges and speed adjustments
+  - Smooth transitions between positions
+- **Mouse Tracking Improvements**: Enhanced character-user interaction
+  - Precise mouse position tracking
+  - Natural eye movement limits
+  - Vertical and horizontal gaze following
+  - Smooth interpolation for natural movement
+- **VRM Character Controls**: Added comprehensive character control panel
+  - Character scaling and positioning
+  - Animation playback controls
+  - Expression management
+  - VRM model validation
