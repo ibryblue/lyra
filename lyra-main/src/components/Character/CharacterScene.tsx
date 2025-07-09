@@ -196,33 +196,6 @@ export function CharacterScene() {
           
         </Suspense>
       </Canvas>
-
-      {/* UI Overlay for character info */}
-      <motion.div
-        className="absolute bottom-4 left-4 bg-gray-900/80 backdrop-blur-md rounded-lg p-4 max-w-xs"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: character.isLoaded ? 1 : 0,
-          y: character.isLoaded ? 0 : 20
-        }}
-        transition={{ delay: 1 }}
-      >
-        <h3 className="text-cyan-400 font-semibold mb-2">
-          {character.name}
-        </h3>
-        <p className="text-gray-300 text-sm">
-          Your virtual companion from the digital cosmos. 
-          Click on me to interact!
-        </p>
-        {character.isAnimating && (
-          <div className="mt-2 flex items-center">
-            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse mr-2"></div>
-            <span className="text-cyan-400 text-xs">
-              {character.currentAnimation}
-            </span>
-          </div>
-        )}
-      </motion.div>
     </div>
   );
 }

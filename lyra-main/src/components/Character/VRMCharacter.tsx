@@ -36,6 +36,18 @@ export function VRMCharacter() {
   useEffect(() => {
     vrmManager.current = getVRMManager(scene);
   }, [scene]);
+
+  // Function to set rotation with proper quaternion
+  const setRotation = (bone: any, x: number, y: number, z: number) => {
+    if (bone?.node) {
+      bone.node.rotation.set(
+        THREE.MathUtils.degToRad(x),
+        THREE.MathUtils.degToRad(y),
+        THREE.MathUtils.degToRad(z)
+      );
+      bone.node.updateMatrix();
+    }
+  };
   
   // Update VRM reference in store when it changes
   useEffect(() => {
@@ -123,6 +135,34 @@ export function VRMCharacter() {
         
         // Update refs and state
         vrmRef.current = vrm;
+        
+        // Initialize pose before setting as loaded
+        if (vrm.humanoid) {
+          // Reset to bind pose
+          vrm.humanoid.resetPose();
+          
+          // Get all human bone nodes
+          const bones = vrm.humanoid.humanBones;
+          
+          // Set initial pose (arms slightly down)
+          setRotation(bones.leftShoulder, 0, 0, -10);
+          setRotation(bones.rightShoulder, 0, 0, 10);
+          setRotation(bones.leftUpperArm, 0, 0, -1);
+          setRotation(bones.rightUpperArm, 0, 0, 1);
+          setRotation(bones.spine, 0, 0, 0);
+          setRotation(bones.chest, 0, 0, 0);
+          setRotation(bones.upperChest, 0, 0, 0);
+          setRotation(bones.neck, 0, 0, 0);
+          setRotation(bones.head, 0, 0, 0);
+          setRotation(bones.leftLowerArm, 0, 0, 0);
+          setRotation(bones.rightLowerArm, 0, 0, 0);
+          setRotation(bones.leftHand, 0, 0, 0);
+          setRotation(bones.rightHand, 0, 0, 0);
+          
+          // Update the entire skeleton
+          vrm.scene.updateMatrixWorld(true);
+        }
+        
         setCharacterLoaded(true);
         setLoadError(null);
         
@@ -141,15 +181,39 @@ export function VRMCharacter() {
           // Create new mixer
           mixerRef.current = new THREE.AnimationMixer(vrm.scene);
           
-          // Apply current animation if available
-          if (character.currentVRMA?.animation) {
+          // Load and apply idle animation if available
+          try {
             const vrmaManager = getVRMAManager();
-            const action = vrmaManager.applyAnimationToVRM(vrm, character.currentVRMA.animation, mixerRef.current);
-            if (action) {
-              action.reset().play();
-              setCurrentAction(action);
-              console.log('Applied animation to new model:', character.currentVRMA.name);
+            const idleAnimations = await vrmaManager.loadVRMA('/animations/VRMA_01.vrma');
+            if (idleAnimations && idleAnimations.length > 0) {
+              const action = vrmaManager.applyAnimationToVRM(vrm, idleAnimations[0], mixerRef.current);
+              if (action) {
+                // Set the animation to play only once
+                action.setLoop(THREE.LoopOnce, 1);
+                action.clampWhenFinished = false;
+
+                // When animation finishes, reset to our initial pose
+                action.getMixer().addEventListener('finished', () => {
+                  mixerRef.current?.stopAllAction();
+                  if (vrm.humanoid) {
+                    vrm.humanoid.resetPose();
+                    // Reapply our initial pose
+                    const bones = vrm.humanoid.humanBones;
+                    setRotation(bones.leftShoulder, 0, 0, -10);
+                    setRotation(bones.rightShoulder, 0, 0, 10);
+                    setRotation(bones.leftUpperArm, 0, 0, -1);
+                    setRotation(bones.rightUpperArm, 0, 0, 1);
+                    vrm.scene.updateMatrixWorld(true);
+                  }
+                  setCurrentAction(null);
+                });
+
+                action.reset().play();
+                setCurrentAction(action);
+              }
             }
+          } catch (animError) {
+            console.warn('Could not load idle animation:', animError);
           }
         }
         

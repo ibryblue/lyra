@@ -34,10 +34,20 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
 function MainPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const { character } = useStore();
+  const { character, setCurrentVRM } = useStore();
   
   // Initialize interactions hook
   useInteractions();
+
+  // Load default VRM model
+  useEffect(() => {
+    const defaultVRM = {
+      id: 'default',
+      name: 'Default',
+      url: '/models/default.vrm'  // Correct path to the VRM file in public/models
+    };
+    setCurrentVRM(defaultVRM);
+  }, [setCurrentVRM]);  // Add setCurrentVRM to dependency array
 
   // Simulate loading progress
   useEffect(() => {
@@ -94,10 +104,10 @@ function MainPage() {
             {/* Welcome Message Overlay */}
             {character.isLoaded && (
               <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none">
-                <div className="bg-gray-900/90 backdrop-blur-md rounded-lg px-6 py-3 text-center max-w-md">
+                <div className="bg-gray-900/80 backdrop-blur-sm rounded-lg px-4 py-2 text-center max-w-sm">
                   <h2 className="text-cyan-400 font-semibold mb-1">Welcome to Lyra</h2>
                   <p className="text-gray-300 text-sm">
-                    Click on me to interact, or use the controls to customize my voice and appearance!
+                    Step into a world of cosmic charm! Use the menu to bring your character to life ✨
                   </p>
                 </div>
               </div>

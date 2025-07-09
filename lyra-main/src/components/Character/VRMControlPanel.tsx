@@ -149,12 +149,6 @@ export function VRMControlPanel() {
         return;
       }
 
-      // Stop any current animation
-      const currentAction = character.vrmRef.current.scene.userData.mixer?.clipAction(character.currentVRMA?.animation);
-      if (currentAction) {
-        currentAction.stop();
-      }
-
       // Load the new animation
       const vrmaPath = `/animations/${animationId}.vrma`;
       const vrmaManager = getVRMAManager();
@@ -171,23 +165,15 @@ export function VRMControlPanel() {
       }
       const mixer = character.vrmRef.current.scene.userData.mixer;
 
-      // Stop any current animations and reset to T-pose
+      // Stop any current animations
       mixer.stopAllAction();
       
       // Play the new animation
       const action = mixer.clipAction(animations[0]);
       action.reset();
       action.clampWhenFinished = true;
-      action.loop = THREE.LoopOnce;
+      action.loop = THREE.LoopRepeat; // Change to LoopRepeat to allow continuous play/pause
       action.play();
-
-      // Add a finished event listener to return to T-pose
-      action.getMixer().addEventListener('finished', () => {
-        mixer.stopAllAction();
-        setCharacterAnimation('paused');
-        setIsPlaying(false);
-        setCurrentVRMA(null);
-      });
 
       // Update state with properly formatted VRMA data
       setCurrentVRMA({
@@ -212,7 +198,7 @@ export function VRMControlPanel() {
         // Update state
         setCharacterAnimation('paused');
         setIsPlaying(false);
-        // Clear the current animation
+        // Clear the current animation to fully reset
         setCurrentVRMA(null);
       }
     } catch (error) {
@@ -222,8 +208,8 @@ export function VRMControlPanel() {
 
   const handlePlayAnimation = () => {
     try {
-      // If we have a current animation ID, restart it from the beginning
       if (character.currentVRMA?.id) {
+        // Start the animation from beginning
         handleAnimationChange(character.currentVRMA.id);
       }
     } catch (error) {
@@ -233,14 +219,9 @@ export function VRMControlPanel() {
 
   const handleResetAnimation = () => {
     try {
-      const mixer = character.vrmRef?.current?.scene?.userData.mixer;
-      if (mixer) {
-        // Stop all animations to return to T-pose
-        mixer.stopAllAction();
-        // Update state
-        setCharacterAnimation('paused');
-        setIsPlaying(false);
-        setCurrentVRMA(null);
+      if (character.currentVRMA?.id) {
+        // Restart the current animation from the beginning
+        handleAnimationChange(character.currentVRMA.id);
       }
     } catch (error) {
       console.error('Error resetting animation:', error);
@@ -307,7 +288,7 @@ export function VRMControlPanel() {
             VRM Character Control
           </h2>
           <p className="text-gray-400 text-sm">
-            Manage 3D character and animations
+            Manage your character's appearance and animations
           </p>
         </div>
         
@@ -317,8 +298,8 @@ export function VRMControlPanel() {
             { id: 'character', name: 'Character', icon: User },
             { id: 'animation', name: 'Animation', icon: Film },
             { id: 'expression', name: 'Expression', icon: SmilePlus },
-            { id: 'validation', name: 'Validation', icon: Settings }
-          ].map((tab) => (
+            { id: 'validation', name: 'Settings', icon: Settings }
+          ].filter(tab => tab.id !== 'voice').map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -480,13 +461,23 @@ export function VRMControlPanel() {
                             </div>
                             <div className="flex space-x-2">
                               {character.currentVRMA?.id === anim.id ? (
-                                <button
-                                  onClick={handlePauseAnimation}
-                                  className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-                                  title="Pause"
-                                >
-                                  <Pause className="w-5 h-5" />
-                                </button>
+                                character.currentAnimation === 'paused' ? (
+                                  <button
+                                    onClick={handlePlayAnimation}
+                                    className="p-2 rounded-lg bg-green-600 hover:bg-green-500 text-white"
+                                    title="Play"
+                                  >
+                                    <Play className="w-5 h-5" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={handlePauseAnimation}
+                                    className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
+                                    title="Pause"
+                                  >
+                                    <Pause className="w-5 h-5" />
+                                  </button>
+                                )
                               ) : (
                                 <button
                                   onClick={() => handleAnimationChange(anim.id)}

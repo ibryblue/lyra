@@ -35,195 +35,21 @@ function ControlPanel() {
   } = useStore();
   
   const { speakResponse } = useInteractions();
+  
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false); // Set to false by default
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
 
   useEffect(() => {
-    const loadVoices = () => {
-      const availableVoices = ttsManager.getVoices();
-      setVoices(availableVoices);
-      
-      // Set default voice
-      if (availableVoices.length > 0 && !voice.voice) {
-        const femaleVoice = availableVoices.find(v => 
-          v.name.toLowerCase().includes('female') || 
-          v.name.toLowerCase().includes('zira') ||
-          v.name.toLowerCase().includes('hazel')
-        ) || availableVoices[0];
-        setVoice(femaleVoice);
-      }
-    };
-
-    loadVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
-    
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
-    };
-  }, [setVoice, voice.voice]);
-
-  const handleVoiceToggle = () => {
+    // Ensure voice is disabled on mount
+    setIsVoiceEnabled(false);
     if (isSpeaking) {
       ttsManager.stop();
       setSpeaking(false);
     }
-    setIsVoiceEnabled(!isVoiceEnabled);
-  };
+  }, []);
 
-  const handleTestVoice = () => {
-    if (isVoiceEnabled) {
-      speakResponse("Hello! This is how I sound. Nice to meet you!");
-    }
-  };
-
-  const handleStopSpeaking = () => {
-    ttsManager.stop();
-    setSpeaking(false);
-  };
-
-  return (
-    <motion.div
-      className="bg-gray-900/90 backdrop-blur-md rounded-xl p-6 max-w-sm"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-    >
-      <h3 className="text-cyan-400 font-semibold mb-4 flex items-center">
-        <Volume2 className="w-5 h-5 mr-2" />
-        Voice Settings
-      </h3>
-
-      {/* Voice Enable/Disable */}
-      <div className="mb-4">
-        <button
-          onClick={handleVoiceToggle}
-          className={`flex items-center justify-center w-full p-3 rounded-lg transition-all ${
-            isVoiceEnabled 
-              ? 'bg-cyan-500 hover:bg-cyan-600 text-white' 
-              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-          }`}
-        >
-          {isVoiceEnabled ? (
-            <>
-              <Mic className="w-4 h-4 mr-2" />
-              Voice Enabled
-            </>
-          ) : (
-            <>
-              <MicOff className="w-4 h-4 mr-2" />
-              Voice Disabled
-            </>
-          )}
-        </button>
-      </div>
-
-      {isVoiceEnabled && (
-        <>
-          {/* Voice Selection */}
-          <div className="mb-4">
-            <label htmlFor="voice-select" className="block text-sm font-medium text-gray-300 mb-2">
-              Voice
-            </label>
-            <select
-              id="voice-select"
-              title="Select voice"
-              value={voice.voice?.name || ''}
-              onChange={(e) => {
-                const selectedVoice = voices.find(v => v.name === e.target.value);
-                if (selectedVoice) setVoice(selectedVoice);
-              }}
-              className="w-full p-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            >
-              {voices.map((v) => (
-                <option key={v.name} value={v.name}>
-                  {v.name} ({v.lang})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Voice Controls */}
-          <div className="space-y-4">
-            {/* Rate */}
-            <div>
-              <label htmlFor="voice-speed" className="block text-sm font-medium text-gray-300 mb-1">
-                Speed: {voice.rate.toFixed(1)}x
-              </label>
-              <input
-                id="voice-speed"
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={voice.rate}
-                title="Adjust voice speed"
-                onChange={(e) => setVoiceRate(parseFloat(e.target.value))}
-                className="w-full accent-cyan-500"
-              />
-            </div>
-
-            {/* Pitch */}
-            <div>
-              <label htmlFor="voice-pitch" className="block text-sm font-medium text-gray-300 mb-1">
-                Pitch: {voice.pitch.toFixed(1)}
-              </label>
-              <input
-                id="voice-pitch"
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={voice.pitch}
-                title="Adjust voice pitch"
-                onChange={(e) => setVoicePitch(parseFloat(e.target.value))}
-                className="w-full accent-cyan-500"
-              />
-            </div>
-
-            {/* Volume */}
-            <div>
-              <label htmlFor="voice-volume" className="block text-sm font-medium text-gray-300 mb-1">
-                Volume: {Math.round(voice.volume * 100)}%
-              </label>
-              <input
-                id="voice-volume"
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={voice.volume}
-                title="Adjust voice volume"
-                onChange={(e) => setVoiceVolume(parseFloat(e.target.value))}
-                className="w-full accent-cyan-500"
-              />
-            </div>
-          </div>
-
-          {/* Test and Control Buttons */}
-          <div className="mt-6 space-y-2">
-            <button
-              onClick={handleTestVoice}
-              disabled={isSpeaking}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Test Voice
-            </button>
-
-            {isSpeaking && (
-              <button
-                onClick={handleStopSpeaking}
-                className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
-              >
-                <Pause className="w-4 h-4 mr-2" />
-                Stop Speaking
-              </button>
-            )}
-          </div>
-        </>
-      )}
-    </motion.div>
-  );
+  // Hide the voice UI by returning null
+  return null;
 }
 
 // Character Panel Component
@@ -242,23 +68,22 @@ function CharacterPanel() {
 
 // Main Interface Component
 export function MainInterface() {
-  const { ui, toggleMenu, setActivePanel } = useStore();
+  const { ui, toggleMenu, setActivePanel, setCharacterAnimation } = useStore();
   const { speakResponse, isIdle, interactionCount } = useInteractions();
 
   const handleQuickAction = (action: string) => {
     switch (action) {
       case 'greet':
-        speakResponse("Hello! How are you doing today?");
+        setCharacterAnimation('VRMA_02'); // Greeting animation
         break;
       case 'joke':
-        speakResponse("Why don't programmers like nature? It has too many bugs!");
+        setCharacterAnimation('VRMA_03'); // Peace sign animation
         break;
       case 'compliment':
-        speakResponse("You have excellent taste in virtual companions!");
+        setCharacterAnimation('VRMA_01'); // Full body display animation
         break;
       case 'time':
-        const now = new Date();
-        speakResponse(`The current time is ${now.toLocaleTimeString()}`);
+        setCharacterAnimation('VRMA_04'); // Shooting animation
         break;
     }
   };
@@ -286,63 +111,6 @@ export function MainInterface() {
         </motion.button>
       </div>
 
-      {/* Quick Actions Bar */}
-      <motion.div
-        className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900/80 backdrop-blur-md rounded-full px-6 py-3 pointer-events-auto"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <div className="flex space-x-4">
-          <button
-            onClick={() => handleQuickAction('greet')}
-            className="text-cyan-400 hover:text-cyan-300 transition-colors"
-            title="Greet"
-          >
-            <MessageCircle className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => handleQuickAction('joke')}
-            className="text-purple-400 hover:text-purple-300 transition-colors"
-            title="Tell a joke"
-          >
-            😄
-          </button>
-          <button
-            onClick={() => handleQuickAction('compliment')}
-            className="text-pink-400 hover:text-pink-300 transition-colors"
-            title="Compliment"
-          >
-            <Heart className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => handleQuickAction('time')}
-            className="text-blue-400 hover:text-blue-300 transition-colors"
-            title="Current time"
-          >
-            🕐
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Status Bar */}
-      <motion.div
-        className="fixed top-4 left-4 bg-gray-900/80 backdrop-blur-md rounded-lg p-3 pointer-events-auto"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-      >
-        <div className="text-cyan-400 text-sm font-mono">
-          <div>Interactions: {interactionCount}</div>
-          <div className="flex items-center mt-1">
-            <div className={`w-2 h-2 rounded-full mr-2 ${isIdle ? 'bg-yellow-400' : 'bg-green-400'}`}></div>
-            {isIdle ? 'Idle' : 'Active'}
-          </div>
-          <div className="mt-1 text-xs">
-            Menu: {ui.isMenuOpen ? 'Open' : 'Closed'}
-          </div>
-        </div>
-      </motion.div>
-
       {/* Side Panels */}
       <AnimatePresence>
         {ui.isMenuOpen && (
@@ -357,6 +125,7 @@ export function MainInterface() {
               {/* Panel Selection Buttons */}
               <div className="flex space-x-2 mb-4">
                 <button
+                  style={{ display: 'none' }} // Hide voice button
                   onClick={() => setActivePanel(ui.activePanel === 'voice' ? null : 'voice')}
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     ui.activePanel === 'voice' 
@@ -396,10 +165,11 @@ export function MainInterface() {
                 >
                   <h3 className="text-cyan-400 font-semibold mb-4">Menu</h3>
                   <p className="text-gray-300 text-sm mb-4">
-                    Select a category above to customize Lyra's behavior and appearance.
+                    Select a category above to customize the character's appearance and animations.
                   </p>
                   <div className="space-y-2">
                     <button
+                      style={{ display: 'none' }} // Hide voice settings button
                       onClick={() => setActivePanel('voice')}
                       className="w-full text-left p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                     >

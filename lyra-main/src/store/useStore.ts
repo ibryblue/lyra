@@ -116,7 +116,7 @@ export const useStore = create<AppState>((set, get) => ({
     voice: null,
     rate: 1.0,
     pitch: 1.0,
-    volume: 0.8,
+    volume: 0, // Set volume to 0 to mute
   },
   
   ui: {

@@ -7,7 +7,6 @@ export function MouseTracker() {
   const { character } = useStore();
   const [isTracking, setIsTracking] = useState(true);
   const targetObj = useRef(new THREE.Object3D());
-  const currentVelocity = useRef(new THREE.Vector3());
   const lastMousePos = useRef({ x: 0, y: 0 });
   const lastBlinkTime = useRef(Date.now());
   const nextBlinkDelay = useRef(getRandomBlinkDelay());
@@ -15,73 +14,120 @@ export function MouseTracker() {
   const moveStartTime = useRef(0);
   const moveDistance = useRef(new THREE.Vector3());
   const moveDuration = useRef(0);
-  const maxSpeed = useRef(0);
+  const lastMouseMoveTime = useRef(Date.now());
+  const isIdle = useRef(false);
+  const centerPos = new THREE.Vector3(0, 1.5, -2);
+  const currentVelocity = useRef(new THREE.Vector3());
 
   function getRandomBlinkDelay() {
     return 2000 + Math.random() * 4000;
   }
 
-  // From "Eyes Alive" paper - adjusted for separate x/y movement
-  function calculateMoveDuration(distanceX: number, distanceY: number): number {
-    // Longer duration for vertical movement as eyes move slower vertically
-    const xDuration = 0.025 + 0.00235 * Math.abs(distanceX);
-    const yDuration = 0.035 + 0.00335 * Math.abs(distanceY); // Slower for vertical
-    return Math.max(xDuration, yDuration);
+  // Improved lerp function with velocity for smoother transitions
+  function smoothLerp(current: number, target: number, velocity: { value: number }, smoothTime: number, deltaTime: number): number {
+    const omega = 2 / smoothTime;
+    const x = omega * deltaTime;
+    const exp = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
+    const change = current - target;
+    const temp = (velocity.value + omega * change) * deltaTime;
+    velocity.value = (velocity.value - omega * temp) * exp;
+    return target + (change + temp) * exp;
   }
 
-  // From "Realistic Avatar and Head Animation" paper - adjusted for separate x/y movement
-  function calculateMaxSpeed(distanceX: number, distanceY: number): number {
-    const xSpeed = 473 * (1 - Math.exp(-Math.abs(distanceX) / 7.8));
-    const ySpeed = 373 * (1 - Math.exp(-Math.abs(distanceY) / 6.2)); // Slower vertical movement
-    return Math.max(xSpeed, ySpeed);
-  }
+  // Force eyes to center
+  useEffect(() => {
+    if (character.vrmRef?.current?.lookAt) {
+      targetObj.current.position.copy(centerPos);
+      character.vrmRef.current.lookAt.target = targetObj.current;
+    }
+  }, [character.vrmRef]);
 
   useEffect(() => {
     let animationFrameId: number;
-    const target = new THREE.Vector3(0, 1.5, -2);
+    const target = new THREE.Vector3().copy(centerPos);
     let lastUpdateTime = Date.now();
+    let idleCheckTimeout: NodeJS.Timeout;
     
     // Initialize target object position at eye level
-    targetObj.current.position.set(0, 1.5, -2);
+    targetObj.current.position.copy(centerPos);
+    currentVelocity.current.set(0, 0, 0);
+    
+    function startIdleCheck() {
+      clearTimeout(idleCheckTimeout);
+      idleCheckTimeout = setTimeout(() => {
+        isIdle.current = true;
+        isMoving.current = true;
+        moveStartTime.current = Date.now();
+        moveDuration.current = 800;
+        moveDistance.current.subVectors(centerPos, targetObj.current.position);
+      }, 1000);
+    }
     
     function updateMousePosition(event: MouseEvent) {
       if (!isTracking || !character.vrmRef?.current) return;
+
+      // Check if any expression is active
+      const expressionManager = character.vrmRef.current.expressionManager;
+      const hasActiveExpression = expressionManager?.expressions.some(
+        expr => expressionManager?.getValue(expr.expressionName) > 0 && 
+        expr.expressionName !== 'blink'
+      );
+
+      // If expressions are active or not tracking, keep eyes centered
+      if (hasActiveExpression || !isTracking) {
+        target.copy(centerPos);
+        targetObj.current.position.copy(centerPos);
+        if (character.vrmRef?.current?.lookAt) {
+          character.vrmRef.current.lookAt.target = targetObj.current;
+          // Force immediate update
+          character.vrmRef.current.update(0);
+        }
+        return;
+      }
 
       // Calculate normalized mouse position
       const rect = document.body.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // Apply natural movement limits with different ranges for x and y
-      const maxHorizontal = 0.6;  // Increased for wider horizontal movement
-      const maxVertical = 0.45;   // Adjusted for natural vertical range
+      // Check if mouse is in center area (smaller dead zone)
+      const inCenterArea = Math.abs(x) < 0.1 && Math.abs(y) < 0.1;
+
+      // Apply natural movement limits
+      const maxHorizontal = 0.6;
+      const maxVertical = 0.4;
+
+      // Simple clamping for more predictable movement
       const normalizedX = Math.max(-maxHorizontal, Math.min(maxHorizontal, x));
       const normalizedY = Math.max(-maxVertical, Math.min(maxVertical, y));
 
-      // Calculate target position with adjusted multipliers
-      const targetX = normalizedX * 1.2;  // Horizontal movement
-      const targetY = normalizedY * 1.0 + 1.5;  // Vertical movement
-      const targetZ = -2 + Math.abs(normalizedY) * 0.2; // Slight depth adjustment for vertical movement
+      // Calculate target position with balanced ranges
+      const targetX = normalizedX * 0.8; // Reduced multiplier for more natural horizontal movement
+      const targetY = normalizedY * 0.6 + 1.5; // Reduced multiplier but still noticeable
+      const targetZ = -2 + Math.abs(normalizedY) * 0.3; // Subtle depth change
 
-      // Set new target position
-      target.set(targetX, targetY, targetZ);
+      // Set target based on position
+      if (inCenterArea || isIdle.current) {
+        target.copy(centerPos);
+      } else {
+        target.set(targetX, targetY, targetZ);
+      }
 
-      // Calculate separate X and Y distances for movement parameters
-      const currentX = targetObj.current.position.x;
-      const currentY = targetObj.current.position.y;
-      const distanceX = Math.abs(targetX - currentX) * 100; // Convert to degrees
-      const distanceY = Math.abs(targetY - currentY) * 100; // Convert to degrees
+      // Reset idle check
+      isIdle.current = false;
+      lastMouseMoveTime.current = Date.now();
+      startIdleCheck();
 
-      // Calculate movement parameters based on both X and Y movement
+      // Calculate movement
       moveDistance.current.subVectors(target, targetObj.current.position);
-      
-      // Only start new movement if either X or Y distance is significant
-      if (distanceX > 0.01 || distanceY > 0.01) {
+      const distance = moveDistance.current.length();
+
+      // Start new movement if distance is significant
+      if (distance > 0.001) {
         isMoving.current = true;
         moveStartTime.current = Date.now();
-        moveDuration.current = calculateMoveDuration(distanceX, distanceY) * 1000;
-        maxSpeed.current = calculateMaxSpeed(distanceX, distanceY);
-        lastMousePos.current = { x: normalizedX, y: normalizedY };
+        moveDuration.current = 300; // Faster response time
+        lastMousePos.current = { x, y };
       }
     }
 
@@ -103,31 +149,64 @@ export function MouseTracker() {
     function animate() {
       if (character.vrmRef?.current) {
         const now = Date.now();
-        const deltaTime = (now - lastUpdateTime) / 1000;
+        const deltaTime = Math.min((now - lastUpdateTime) / 1000, 0.016);
         lastUpdateTime = now;
 
         const lookAt = character.vrmRef.current.lookAt;
-        if (lookAt && isMoving.current) {
-          const elapsed = now - moveStartTime.current;
-          const progress = Math.min(elapsed / moveDuration.current, 1);
-          
-          if (progress < 1) {
-            // Smooth step interpolation with adjusted curve for more natural movement
-            const smoothProgress = progress * progress * (3 - 2 * progress);
-            
-            // Update position using direct interpolation with the smooth progress
-            const newPosition = target.clone().sub(moveDistance.current)
-              .add(moveDistance.current.multiplyScalar(smoothProgress));
-            
-            targetObj.current.position.copy(newPosition);
-          } else {
-            // Movement complete
-            targetObj.current.position.copy(target);
-            isMoving.current = false;
-          }
+        if (lookAt) {
+          // Check if expressions are active and force center if needed
+          const expressionManager = character.vrmRef.current.expressionManager;
+          const hasActiveExpression = expressionManager?.expressions.some(
+            expr => expressionManager?.getValue(expr.expressionName) > 0 && 
+            expr.expressionName !== 'blink'
+          );
 
-          // Apply look at
-          lookAt.target = targetObj.current;
+          if (hasActiveExpression || !isTracking) {
+            targetObj.current.position.copy(centerPos);
+            lookAt.target = targetObj.current;
+          } else {
+            const elapsed = now - moveStartTime.current;
+            const progress = Math.min(elapsed / moveDuration.current, 1);
+            
+            if (progress < 1 && isMoving.current) {
+              // Enhanced smooth movement with velocity
+              const newPosition = new THREE.Vector3();
+              const velocityX = { value: currentVelocity.current.x };
+              const velocityY = { value: currentVelocity.current.y };
+              const velocityZ = { value: currentVelocity.current.z };
+
+              // Apply smoothing with different parameters for each axis
+              newPosition.x = smoothLerp(
+                targetObj.current.position.x,
+                target.x,
+                velocityX,
+                0.08, // Faster horizontal response
+                deltaTime
+              );
+              newPosition.y = smoothLerp(
+                targetObj.current.position.y,
+                target.y,
+                velocityY,
+                0.1, // Balanced vertical movement
+                deltaTime
+              );
+              newPosition.z = smoothLerp(
+                targetObj.current.position.z,
+                target.z,
+                velocityZ,
+                0.12, // Smooth depth changes
+                deltaTime
+              );
+
+              currentVelocity.current.set(velocityX.value, velocityY.value, velocityZ.value);
+              targetObj.current.position.copy(newPosition);
+            } else {
+              targetObj.current.position.copy(target);
+              isMoving.current = false;
+            }
+
+            lookAt.target = targetObj.current;
+          }
         }
 
         // Handle blinking
@@ -146,6 +225,7 @@ export function MouseTracker() {
     window.addEventListener('mousemove', updateMousePosition);
 
     return () => {
+      clearTimeout(idleCheckTimeout);
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', updateMousePosition);
     };

@@ -66,12 +66,37 @@ export class VRMManager {
   applyVRMPose(vrm: VRM, pose: Record<string, THREE.Quaternion>) {
     if (!vrm.humanoid) return;
     
+    // First reset to neutral pose
+    Object.values(vrm.humanoid.humanBones).forEach(bone => {
+      if (bone && bone.node) {
+        bone.node.quaternion.set(0, 0, 0, 1);
+      }
+    });
+    
+    // Then apply the new pose with smooth interpolation
     Object.entries(pose).forEach(([boneName, rotation]) => {
       const bone = vrm.humanoid?.getNormalizedBoneNode(boneName as any);
       if (bone) {
-        bone.quaternion.copy(rotation);
+        // Use slerp for smooth rotation
+        bone.quaternion.slerp(rotation, 1);
       }
     });
+    
+    // Ensure natural hand positions
+    const leftHand = vrm.humanoid?.getNormalizedBoneNode('leftHand');
+    const rightHand = vrm.humanoid?.getNormalizedBoneNode('rightHand');
+    
+    if (leftHand) {
+      leftHand.quaternion.slerp(new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(0, 0, -0.1)
+      ), 0.5);
+    }
+    
+    if (rightHand) {
+      rightHand.quaternion.slerp(new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(0, 0, 0.1)
+      ), 0.5);
+    }
   }
   
   // Update VRM
