@@ -81,9 +81,14 @@ export function VRMCharacter() {
       const action = vrmaManager.applyAnimationToVRM(vrmRef.current, character.currentVRMA.animation, mixerRef.current);
       
       if (action) {
+        // Set the animation to loop infinitely
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.clampWhenFinished = false;
+
+        // No need for 'finished' event listener since we're looping
+
         action.reset().play();
         setCurrentAction(action);
-        console.log('Started new animation:', character.currentVRMA.name);
       }
     }
   }, [character.currentVRMA]);
@@ -188,25 +193,11 @@ export function VRMCharacter() {
             if (idleAnimations && idleAnimations.length > 0) {
               const action = vrmaManager.applyAnimationToVRM(vrm, idleAnimations[0], mixerRef.current);
               if (action) {
-                // Set the animation to play only once
-                action.setLoop(THREE.LoopOnce, 1);
+                // Set the animation to loop infinitely instead of playing once
+                action.setLoop(THREE.LoopRepeat, Infinity);
                 action.clampWhenFinished = false;
 
-                // When animation finishes, reset to our initial pose
-                action.getMixer().addEventListener('finished', () => {
-                  mixerRef.current?.stopAllAction();
-                  if (vrm.humanoid) {
-                    vrm.humanoid.resetPose();
-                    // Reapply our initial pose
-                    const bones = vrm.humanoid.humanBones;
-                    setRotation(bones.leftShoulder, 0, 0, -10);
-                    setRotation(bones.rightShoulder, 0, 0, 10);
-                    setRotation(bones.leftUpperArm, 0, 0, -1);
-                    setRotation(bones.rightUpperArm, 0, 0, 1);
-                    vrm.scene.updateMatrixWorld(true);
-                  }
-                  setCurrentAction(null);
-                });
+                // No need for 'finished' event listener since we're looping infinitely
 
                 action.reset().play();
                 setCurrentAction(action);
